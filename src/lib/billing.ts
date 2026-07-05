@@ -1,0 +1,72 @@
+import { addMonths, setDate, startOfMonth } from "date-fns";
+
+export type InstallmentDraft = {
+  installment_number: number;
+  amount: number;
+  billing_month: string;
+};
+
+export const getFirstBillingMonth = (
+  purchaseDate: Date,
+  closingDay: number
+): Date => {
+  const day = purchaseDate.getDate();
+  const baseMonth = startOfMonth(purchaseDate);
+
+  if (day <= closingDay) {
+    return baseMonth;
+  }
+
+  return startOfMonth(addMonths(purchaseDate, 1));
+};
+
+export const getBillingMonthForInstallment = (
+  purchaseDate: Date,
+  closingDay: number,
+  installmentIndex: number
+): Date => {
+  const firstMonth = getFirstBillingMonth(purchaseDate, closingDay);
+  return startOfMonth(addMonths(firstMonth, installmentIndex));
+};
+
+export const toBillingMonthDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}-01`;
+};
+
+export const splitInstallmentAmounts = (
+  totalAmount: number,
+  installments: number
+): number[] => {
+  const totalCents = Math.round(totalAmount * 100);
+  const baseCents = Math.floor(totalCents / installments);
+  const remainder = totalCents - baseCents * installments;
+
+  return Array.from({ length: installments }, (_, index) => {
+    const cents = index === installments - 1 ? baseCents + remainder : baseCents;
+    return cents / 100;
+  });
+};
+
+export const generateInstallments = (
+  totalAmount: number,
+  installments: number,
+  purchaseDate: Date,
+  closingDay: number
+): InstallmentDraft[] => {
+  const amounts = splitInstallmentAmounts(totalAmount, installments);
+
+  return amounts.map((amount, index) => ({
+    installment_number: index + 1,
+    amount,
+    billing_month: toBillingMonthDateString(
+      getBillingMonthForInstallment(purchaseDate, closingDay, index)
+    ),
+  }));
+};
+
+export const parsePurchaseDate = (dateString: string): Date => {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return setDate(new Date(year, month - 1, 1), day);
+};
