@@ -59,6 +59,33 @@ export const getPreviousYearMonth = (year: number, month: number) => {
   return { year, month: month - 1 };
 };
 
+export const getNextYearMonth = (year: number, month: number) => {
+  if (month === 12) {
+    return { year: year + 1, month: 1 };
+  }
+
+  return { year, month: month + 1 };
+};
+
+export const getDashboardMonthOptions = () => {
+  const current = getCurrentYearMonth();
+  return {
+    current,
+    previous: getPreviousYearMonth(current.year, current.month),
+    next: getNextYearMonth(current.year, current.month),
+  };
+};
+
+export const isDashboardAllowedMonth = (year: number, month: number) => {
+  const { current, previous, next } = getDashboardMonthOptions();
+
+  return (
+    (year === current.year && month === current.month) ||
+    (year === previous.year && month === previous.month) ||
+    (year === next.year && month === next.month)
+  );
+};
+
 export const parseYearMonth = (value: string) => {
   const [year, month] = value.split("-").map(Number);
   return { year, month };

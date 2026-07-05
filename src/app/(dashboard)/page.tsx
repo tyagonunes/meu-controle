@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getMonthlyReport } from "@/actions/reports";
+import { DashboardMonthNav } from "@/components/dashboard/dashboard-month-nav";
 import { MonthlySpendingSummary } from "@/components/dashboard/monthly-spending-summary";
 import { LinkButton } from "@/components/ui/link-button";
 import {
@@ -10,21 +11,49 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { formatCurrency, formatMonthYear, getCurrentYearMonth } from "@/lib/format";
+import {
+  formatCurrency,
+  formatMonthYear,
+  getCurrentYearMonth,
+  isDashboardAllowedMonth,
+  toBillingMonthString,
+} from "@/lib/format";
 
-export default async function DashboardPage() {
-  const { year, month } = getCurrentYearMonth();
+type DashboardPageProps = {
+  searchParams: Promise<{ ano?: string; mes?: string }>;
+};
+
+export default async function DashboardPage({
+  searchParams,
+}: DashboardPageProps) {
+  const query = await searchParams;
+  const current = getCurrentYearMonth();
+  const requestedYear = query.ano ? Number(query.ano) : current.year;
+  const requestedMonth = query.mes ? Number(query.mes) : current.month;
+  const year = isDashboardAllowedMonth(requestedYear, requestedMonth)
+    ? requestedYear
+    : current.year;
+  const month = isDashboardAllowedMonth(requestedYear, requestedMonth)
+    ? requestedMonth
+    : current.month;
+
   const report = await getMonthlyReport(year, month);
+  const billingMonth = toBillingMonthString(year, month);
+  const isCurrentMonth =
+    year === current.year && month === current.month;
 
   const balancePositive = report.remainingBalance >= 0;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground capitalize">
-          Resumo de {formatMonthYear(`${year}-${String(month).padStart(2, "0")}-01`)}
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground capitalize">
+            Resumo de {formatMonthYear(billingMonth)}
+          </p>
+        </div>
+        <DashboardMonthNav year={year} month={month} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -107,7 +136,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Faturas por cartão</CardTitle>
-            <CardDescription>Valores do mês atual</CardDescription>
+            <CardDescription>
+              {isCurrentMonth
+                ? "Valores do mês atual"
+                : `Valores de ${formatMonthYear(billingMonth)}`}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {report.cardTotals.length === 0 ? (
@@ -132,7 +165,11 @@ export default async function DashboardPage() {
                     <span className="font-semibold">
                       {formatCurrency(card.total)}
                     </span>
-                    <LinkButton variant="outline" size="sm" href={`/relatorios/fatura/${card.cardId}`}>
+                    <LinkButton
+                      variant="outline"
+                      size="sm"
+                      href={`/relatorios/fatura/${card.cardId}?ano=${year}&mes=${month}`}
+                    >
                       Fatura
                     </LinkButton>
                   </div>
@@ -144,7 +181,9 @@ export default async function DashboardPage() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <LinkButton href="/relatorios/mensal">Ver relatório completo</LinkButton>
+        <LinkButton href={`/relatorios/mensal?ano=${year}&mes=${month}`}>
+          Ver relatório completo
+        </LinkButton>
         <LinkButton variant="outline" href="/receitas">
           Gerenciar receitas
         </LinkButton>

@@ -93,3 +93,36 @@ export const getRecurringInstallmentNumber = (
   const firstBilling = getFirstBillingMonth(purchaseDate, closingDay);
   return differenceInCalendarMonths(targetMonth, firstBilling) + 1;
 };
+
+export type InvoicePurchaseType = "installment" | "recurring" | "cash";
+
+type PurchaseTypeFields = {
+  installments: number;
+  is_recurring: boolean;
+};
+
+export const getInvoicePurchaseType = (
+  purchase: PurchaseTypeFields
+): InvoicePurchaseType => {
+  if (purchase.is_recurring) return "recurring";
+  if (purchase.installments > 1) return "installment";
+  return "cash";
+};
+
+export const groupInstallmentsByPurchaseType = <
+  T extends { purchases: PurchaseTypeFields },
+>(
+  items: T[]
+) => {
+  const groups: Record<InvoicePurchaseType, T[]> = {
+    installment: [],
+    recurring: [],
+    cash: [],
+  };
+
+  for (const item of items) {
+    groups[getInvoicePurchaseType(item.purchases)].push(item);
+  }
+
+  return groups;
+};
