@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Plus } from "lucide-react";
+import { CreditCard as CreditCardIcon, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { createCreditCard, deleteCreditCard, updateCreditCard } from "@/actions/credit-cards";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
 import {
   Dialog,
@@ -18,25 +25,8 @@ import {
 import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  DesktopTableView,
-  ListToolbar,
-  MobileCard,
-  MobileCardActions,
-  MobileCardBody,
-  MobileCardHeader,
-  MobileCardList,
-  MobileCardRow,
-  MobileEmptyState,
-} from "@/components/ui/mobile-list";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ListToolbar } from "@/components/ui/mobile-list";
+import { formatCurrency } from "@/lib/format";
 import type { CreditCard } from "@/types/database";
 
 type CreditCardsListProps = {
@@ -199,38 +189,65 @@ export const CreditCardsList = ({ cards }: CreditCardsListProps) => {
       </ListToolbar>
 
       {cards.length === 0 ? (
-        <MobileEmptyState>Nenhum cartão cadastrado</MobileEmptyState>
+        <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
+          Nenhum cartão cadastrado
+        </div>
       ) : (
-        <MobileCardList>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {cards.map((card) => (
-            <MobileCard key={card.id}>
-              <MobileCardHeader
-                title={
-                  <>
-                    {card.name}
-                    {card.last_digits && (
-                      <span className="ml-1 text-sm font-normal text-muted-foreground">
-                        •••• {card.last_digits}
-                      </span>
-                    )}
-                  </>
-                }
-                badge={
+            <Card key={card.id} className="flex flex-col">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <CreditCardIcon className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0">
+                      <CardTitle className="text-base leading-snug">
+                        <Link
+                          href={`/cartoes/${card.id}`}
+                          className="hover:underline"
+                        >
+                          {card.name}
+                        </Link>
+                      </CardTitle>
+                      {card.last_digits && (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          •••• {card.last_digits}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                   <Badge variant={card.is_active ? "default" : "secondary"}>
                     {card.is_active ? "Ativo" : "Inativo"}
                   </Badge>
-                }
-              />
-              <MobileCardBody>
-                <MobileCardRow label="Fechamento">
-                  Dia {card.closing_day}
-                </MobileCardRow>
-                <MobileCardRow label="Vencimento">
-                  Dia {card.due_day}
-                </MobileCardRow>
-              </MobileCardBody>
-              <MobileCardActions>
-                <LinkButton variant="outline" size="sm" href={`/cartoes/${card.id}`}>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-2 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Fechamento</span>
+                  <span className="font-medium">Dia {card.closing_day}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Vencimento</span>
+                  <span className="font-medium">Dia {card.due_day}</span>
+                </div>
+                {card.credit_limit != null && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">Limite</span>
+                    <span className="font-medium">
+                      {formatCurrency(Number(card.credit_limit))}
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="flex flex-wrap gap-2 border-t pt-4">
+                <LinkButton
+                  variant="outline"
+                  size="sm"
+                  href={`/cartoes/${card.id}`}
+                  className="flex-1 sm:flex-none"
+                >
                   Abrir
                 </LinkButton>
                 <Button
@@ -240,6 +257,7 @@ export const CreditCardsList = ({ cards }: CreditCardsListProps) => {
                     setEditing(card);
                     setOpen(true);
                   }}
+                  className="flex-1 sm:flex-none"
                 >
                   Editar
                 </Button>
@@ -248,87 +266,15 @@ export const CreditCardsList = ({ cards }: CreditCardsListProps) => {
                   size="sm"
                   onClick={() => handleDelete(card.id)}
                   disabled={isPending}
+                  className="flex-1 sm:flex-none"
                 >
                   Excluir
                 </Button>
-              </MobileCardActions>
-            </MobileCard>
+              </CardFooter>
+            </Card>
           ))}
-        </MobileCardList>
+        </div>
       )}
-
-      <DesktopTableView>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cartão</TableHead>
-              <TableHead>Fechamento</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cards.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  Nenhum cartão cadastrado
-                </TableCell>
-              </TableRow>
-            ) : (
-              cards.map((card) => (
-                <TableRow key={card.id}>
-                  <TableCell>
-                    <Link
-                      href={`/cartoes/${card.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {card.name}
-                      {card.last_digits && (
-                        <span className="ml-1 text-muted-foreground">
-                          •••• {card.last_digits}
-                        </span>
-                      )}
-                    </Link>
-                  </TableCell>
-                  <TableCell>Dia {card.closing_day}</TableCell>
-                  <TableCell>Dia {card.due_day}</TableCell>
-                  <TableCell>
-                    <Badge variant={card.is_active ? "default" : "secondary"}>
-                      {card.is_active ? "Ativo" : "Inativo"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <LinkButton variant="outline" size="sm" href={`/cartoes/${card.id}`}>
-                        Abrir
-                      </LinkButton>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditing(card);
-                          setOpen(true);
-                        }}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(card.id)}
-                        disabled={isPending}
-                      >
-                        Excluir
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </DesktopTableView>
     </div>
   );
 };
