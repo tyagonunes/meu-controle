@@ -1,4 +1,5 @@
 import { getUser } from "@/actions/auth";
+import { Logo } from "@/components/brand/logo";
 import { MobileNav, Sidebar } from "@/components/layout/sidebar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
@@ -15,11 +16,14 @@ export default async function DashboardLayout({
       <div className="flex flex-1 flex-col">
         <header className="flex h-16 items-center gap-3 border-b px-4 md:gap-4 md:px-6">
           <MobileNav />
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <p className="truncate text-sm font-medium md:hidden">Meu Controle</p>
-            <p className="truncate text-xs text-muted-foreground md:text-sm">
-              {user?.email}
-            </p>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Logo size={24} className="md:hidden" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium md:hidden">Meu Controle</p>
+              <p className="truncate text-xs text-muted-foreground md:text-sm">
+                {user?.email}
+              </p>
+            </div>
           </div>
           <ThemeToggle className="shrink-0 md:hidden" />
         </header>

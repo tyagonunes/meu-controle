@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="Meu Controle">
+  <defs>
+    <linearGradient id="mc-bg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#047857"/>
+      <stop offset="1" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#mc-bg)"/>
+  <rect x="112" y="288" width="64" height="112" rx="16" fill="white" fill-opacity="0.85"/>
+  <rect x="200" y="224" width="64" height="176" rx="16" fill="white"/>
+  <rect x="288" y="176" width="64" height="224" rx="16" fill="white" fill-opacity="0.92"/>
+  <path
+    d="M136 320 L220 248 L300 280 L376 168"
+    stroke="white"
+    stroke-width="20"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.95"
+  />
+  <circle cx="376" cy="168" r="44" fill="white" fill-opacity="0.22"/>
+  <circle cx="376" cy="168" r="30" fill="white"/>
+  <circle cx="376" cy="168" r="18" fill="#059669"/>
+</svg>

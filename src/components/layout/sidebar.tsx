@@ -6,7 +6,6 @@ import { useState } from "react";
 import {
   Banknote,
   CreditCard,
-  Home,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -14,6 +13,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { signOut } from "@/actions/auth";
+import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,9 +68,8 @@ const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => {
 export const Sidebar = () => {
   return (
     <aside className="hidden w-64 flex-col border-r bg-card md:flex">
-      <div className="flex h-16 items-center gap-2 border-b px-6">
-        <Home className="h-5 w-5" />
-        <span className="text-lg font-semibold">Meu Controle</span>
+      <div className="flex h-16 items-center border-b px-6">
+        <Logo size={28} showLabel />
       </div>
       <div className="flex flex-1 flex-col justify-between p-4">
         <NavLinks />
@@ -110,9 +109,8 @@ export const MobileNav = () => {
       </SheetTrigger>
       <SheetContent side="left" className="flex w-[min(100vw-2rem,16rem)] flex-col p-0">
         <SheetHeader className="border-b p-6 text-left">
-          <SheetTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5" />
-            Meu Controle
+          <SheetTitle>
+            <Logo size={28} showLabel />
           </SheetTitle>
         </SheetHeader>
         <div className="flex min-h-0 flex-1 flex-col justify-between overflow-y-auto p-4">
