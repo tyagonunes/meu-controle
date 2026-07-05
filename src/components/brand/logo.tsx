@@ -11,7 +11,7 @@ export const Logo = ({ size = 32, className, showLabel = false }: LogoProps) => 
     <div className={cn("flex items-center gap-2", className)}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/logo.svg"
+        src="/icons/icon-192.png"
         alt="Meu Controle"
         width={size}
         height={size}
