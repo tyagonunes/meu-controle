@@ -36,6 +36,7 @@ export type FixedExpenseEntry = {
 
 export type FixedExpenseWithEntry = FixedExpense & {
   entry: FixedExpenseEntry | null;
+  previousEntry: FixedExpenseEntry | null;
 };
 
 export type FixedExpenseEntryWithAccount = FixedExpenseEntry & {

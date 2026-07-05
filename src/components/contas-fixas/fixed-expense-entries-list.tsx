@@ -34,6 +34,83 @@ type FixedExpenseEntriesListProps = {
   month: number;
 };
 
+type EntryFormProps = {
+  item: FixedExpenseWithEntry;
+  isPending: boolean;
+  onSubmit: (formData: FormData) => void;
+};
+
+const EntryForm = ({ item, isPending, onSubmit }: EntryFormProps) => {
+  const [amount, setAmount] = useState(
+    item.entry?.amount != null ? String(item.entry.amount) : ""
+  );
+
+  const handleUsePreviousAmount = () => {
+    if (!item.previousEntry) return;
+    setAmount(String(item.previousEntry.amount));
+  };
+
+  return (
+    <form action={onSubmit} className="space-y-4">
+      {item.entry && (
+        <input type="hidden" name="entry_id" value={item.entry.id} />
+      )}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="amount">Valor (R$)</Label>
+          {item.previousEntry && (
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="h-auto shrink-0 p-0 text-xs"
+              onClick={handleUsePreviousAmount}
+            >
+              Usar mês anterior (
+              {formatCurrency(Number(item.previousEntry.amount))})
+            </Button>
+          )}
+        </div>
+        <Input
+          id="amount"
+          name="amount"
+          type="number"
+          step="0.01"
+          min="0"
+          value={amount}
+          onChange={(event) => setAmount(event.target.value)}
+          required
+          placeholder="Ex: 189.50"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="due_day">Dia de vencimento</Label>
+        <Input
+          id="due_day"
+          name="due_day"
+          type="number"
+          min="1"
+          max="31"
+          defaultValue={item.entry?.due_day ?? item.due_day}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="notes">Observações</Label>
+        <Input
+          id="notes"
+          name="notes"
+          defaultValue={item.entry?.notes ?? item.notes ?? ""}
+          placeholder="Opcional"
+        />
+      </div>
+      <Button type="submit" className="w-full" disabled={isPending}>
+        {isPending ? "Salvando..." : "Salvar lançamento"}
+      </Button>
+    </form>
+  );
+};
+
 export const FixedExpenseEntriesList = ({
   items,
   year,
@@ -195,52 +272,12 @@ export const FixedExpenseEntriesList = ({
             </DialogTitle>
           </DialogHeader>
           {selected && (
-            <form
+            <EntryForm
               key={`${selected.id}-${selected.entry?.id ?? "new"}`}
-              action={handleSubmit}
-              className="space-y-4"
-            >
-              {selected.entry && (
-                <input type="hidden" name="entry_id" value={selected.entry.id} />
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="amount">Valor (R$)</Label>
-                <Input
-                  id="amount"
-                  name="amount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  defaultValue={selected.entry?.amount ?? ""}
-                  required
-                  placeholder="Ex: 189.50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="due_day">Dia de vencimento</Label>
-                <Input
-                  id="due_day"
-                  name="due_day"
-                  type="number"
-                  min="1"
-                  max="31"
-                  defaultValue={selected.entry?.due_day ?? selected.due_day}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
-                <Input
-                  id="notes"
-                  name="notes"
-                  defaultValue={selected.entry?.notes ?? selected.notes ?? ""}
-                  placeholder="Opcional"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? "Salvando..." : "Salvar lançamento"}
-              </Button>
-            </form>
+              item={selected}
+              isPending={isPending}
+              onSubmit={handleSubmit}
+            />
           )}
         </DialogContent>
       </Dialog>

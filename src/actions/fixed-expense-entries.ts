@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { toBillingMonthString } from "@/lib/format";
+import { toBillingMonthString, getPreviousYearMonth } from "@/lib/format";
 import { ensureProfile } from "@/lib/supabase/ensure-profile";
 import { isMissingFixedExpenseEntriesTable } from "@/lib/supabase/errors";
 import type {
@@ -52,6 +52,8 @@ export const getFixedExpensesWithEntries = async (
 ): Promise<FixedExpenseWithEntry[]> => {
   const supabase = await createClient();
   const billingMonth = toBillingMonthString(year, month);
+  const previous = getPreviousYearMonth(year, month);
+  const previousBillingMonth = toBillingMonthString(previous.year, previous.month);
 
   const { data: expenses, error: expensesError } = await supabase
     .from("fixed_expenses")
@@ -64,25 +66,36 @@ export const getFixedExpensesWithEntries = async (
   const { data: entries, error: entriesError } = await supabase
     .from("fixed_expense_entries")
     .select("*")
-    .eq("billing_month", billingMonth);
+    .in("billing_month", [billingMonth, previousBillingMonth]);
 
   if (entriesError) {
     if (isMissingFixedExpenseEntriesTable(entriesError.message)) {
       return (expenses ?? []).map((expense) => ({
         ...expense,
         entry: null,
+        previousEntry: null,
       })) as FixedExpenseWithEntry[];
     }
     throw new Error(entriesError.message);
   }
 
-  const entriesByExpenseId = new Map(
-    (entries ?? []).map((entry) => [entry.fixed_expense_id, entry])
-  );
+  const entriesByExpenseId = new Map<string, (typeof entries)[number]>();
+  const previousEntriesByExpenseId = new Map<string, (typeof entries)[number]>();
+
+  for (const entry of entries ?? []) {
+    if (entry.billing_month === billingMonth) {
+      entriesByExpenseId.set(entry.fixed_expense_id, entry);
+    }
+
+    if (entry.billing_month === previousBillingMonth) {
+      previousEntriesByExpenseId.set(entry.fixed_expense_id, entry);
+    }
+  }
 
   return (expenses ?? []).map((expense) => ({
     ...expense,
     entry: entriesByExpenseId.get(expense.id) ?? null,
+    previousEntry: previousEntriesByExpenseId.get(expense.id) ?? null,
   })) as FixedExpenseWithEntry[];
 };
 

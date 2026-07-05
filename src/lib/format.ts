@@ -39,6 +39,14 @@ export const getCurrentYearMonth = () => {
 export const toBillingMonthString = (year: number, month: number) =>
   `${year}-${String(month).padStart(2, "0")}-01`;
 
+export const getPreviousYearMonth = (year: number, month: number) => {
+  if (month === 1) {
+    return { year: year - 1, month: 12 };
+  }
+
+  return { year, month: month - 1 };
+};
+
 export const parseYearMonth = (value: string) => {
   const [year, month] = value.split("-").map(Number);
   return { year, month };
