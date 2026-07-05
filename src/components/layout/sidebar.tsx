@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Banknote,
   CreditCard,
@@ -95,25 +96,27 @@ export const Sidebar = () => {
 };
 
 export const MobileNav = () => {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
-          <Button variant="outline" size="icon" className="md:hidden" />
+          <Button variant="outline" size="icon" className="shrink-0 md:hidden" />
         }
       >
         <Menu className="h-4 w-4" />
         <span className="sr-only">Abrir menu</span>
       </SheetTrigger>
-      <SheetContent side="left" className="w-64 p-0">
+      <SheetContent side="left" className="flex w-[min(100vw-2rem,16rem)] flex-col p-0">
         <SheetHeader className="border-b p-6 text-left">
           <SheetTitle className="flex items-center gap-2">
             <Home className="h-5 w-5" />
             Meu Controle
           </SheetTitle>
         </SheetHeader>
-        <div className="flex flex-col justify-between p-4">
-          <NavLinks />
+        <div className="flex min-h-0 flex-1 flex-col justify-between overflow-y-auto p-4">
+          <NavLinks onNavigate={() => setOpen(false)} />
           <div className="mt-8 space-y-2">
             <div className="flex items-center justify-between rounded-lg border px-3 py-2">
               <span className="text-sm text-muted-foreground">Tema</span>

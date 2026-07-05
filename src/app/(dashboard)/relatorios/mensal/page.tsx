@@ -11,6 +11,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  DesktopTableView,
+  MobileCard,
+  MobileCardActions,
+  MobileCardBody,
+  MobileCardHeader,
+  MobileCardList,
+  MobileCardRow,
+  MobileEmptyState,
+} from "@/components/ui/mobile-list";
+import {
   Table,
   TableBody,
   TableCell,
@@ -106,44 +116,79 @@ export default async function RelatorioMensalPage({
           <CardDescription>Salário e outras fontes de renda</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fonte</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {report.incomeBreakdown.length === 0 ? (
+          {report.incomeBreakdown.length === 0 ? (
+            <p className="text-sm text-muted-foreground md:hidden">
+              Nenhuma receita lançada neste mês
+            </p>
+          ) : (
+            <MobileCardList className="md:hidden">
+              {report.incomeBreakdown.map((income) => (
+                <MobileCard key={income.id}>
+                  <MobileCardHeader title={income.name} />
+                  <MobileCardBody>
+                    <MobileCardRow label="Categoria">
+                      {income.categoryLabel}
+                    </MobileCardRow>
+                    <MobileCardRow label="Valor">
+                      <span className="text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(income.amount)}
+                      </span>
+                    </MobileCardRow>
+                  </MobileCardBody>
+                  <MobileCardActions>
+                    <LinkButton
+                      variant="outline"
+                      size="sm"
+                      href={`/receitas?ano=${year}&mes=${month}`}
+                    >
+                      Ver
+                    </LinkButton>
+                  </MobileCardActions>
+                </MobileCard>
+              ))}
+            </MobileCardList>
+          )}
+
+          <DesktopTableView className="border-0 md:border">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
-                    Nenhuma receita lançada neste mês
-                  </TableCell>
+                  <TableHead>Fonte</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ) : (
-                report.incomeBreakdown.map((income) => (
-                  <TableRow key={income.id}>
-                    <TableCell className="font-medium">{income.name}</TableCell>
-                    <TableCell>{income.categoryLabel}</TableCell>
-                    <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(income.amount)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <LinkButton
-                        variant="outline"
-                        size="sm"
-                        href={`/receitas?ano=${year}&mes=${month}`}
-                      >
-                        Ver
-                      </LinkButton>
+              </TableHeader>
+              <TableBody>
+                {report.incomeBreakdown.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      Nenhuma receita lançada neste mês
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  report.incomeBreakdown.map((income) => (
+                    <TableRow key={income.id}>
+                      <TableCell className="font-medium">{income.name}</TableCell>
+                      <TableCell>{income.categoryLabel}</TableCell>
+                      <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(income.amount)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <LinkButton
+                          variant="outline"
+                          size="sm"
+                          href={`/receitas?ano=${year}&mes=${month}`}
+                        >
+                          Ver
+                        </LinkButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </DesktopTableView>
         </CardContent>
       </Card>
 
@@ -155,7 +200,73 @@ export default async function RelatorioMensalPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <MobileCardList className="md:hidden">
+            {report.fixedExpenseBreakdown.map((expense) => (
+              <MobileCard key={expense.id}>
+                <MobileCardHeader
+                  title={expense.name}
+                  badge={
+                    <Badge variant="secondary" className="text-xs">
+                      {expense.categoryLabel}
+                    </Badge>
+                  }
+                />
+                <MobileCardBody>
+                  <MobileCardRow label="Meu gasto">
+                    {formatCurrency(expense.amount)}
+                  </MobileCardRow>
+                  <MobileCardRow label="Total">
+                    {formatCurrency(expense.amount)}
+                  </MobileCardRow>
+                </MobileCardBody>
+                <MobileCardActions>
+                  <LinkButton
+                    variant="outline"
+                    size="sm"
+                    href={`/contas-fixas?ano=${year}&mes=${month}`}
+                  >
+                    Ver
+                  </LinkButton>
+                </MobileCardActions>
+              </MobileCard>
+            ))}
+            {report.cardTotals.map((card) => (
+              <MobileCard key={card.cardId}>
+                <MobileCardHeader title={card.cardName} />
+                <MobileCardBody>
+                  <MobileCardRow label="Meu gasto">
+                    {formatCurrency(card.ownerTotal)}
+                  </MobileCardRow>
+                  <MobileCardRow label="Terceiros">
+                    {card.othersTotal > 0
+                      ? formatCurrency(card.othersTotal)
+                      : "—"}
+                  </MobileCardRow>
+                  <MobileCardRow label="Total">
+                    {formatCurrency(card.total)}
+                  </MobileCardRow>
+                </MobileCardBody>
+                <MobileCardActions>
+                  <LinkButton
+                    variant="outline"
+                    size="sm"
+                    href={`/relatorios/fatura/${card.cardId}?ano=${year}&mes=${month}`}
+                  >
+                    Fatura
+                  </LinkButton>
+                </MobileCardActions>
+              </MobileCard>
+            ))}
+            {report.fixedExpenseBreakdown.length === 0 &&
+              report.cardTotals.length === 0 && (
+                <MobileEmptyState className="border-0 p-0">
+                  Nenhum lançamento neste mês
+                </MobileEmptyState>
+              )}
+          </MobileCardList>
+
+          <DesktopTableView className="border-0 md:border">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Categoria / Cartão</TableHead>
@@ -245,7 +356,8 @@ export default async function RelatorioMensalPage({
                 </TableRow>
               )}
             </TableBody>
-          </Table>
+            </Table>
+          </DesktopTableView>
         </CardContent>
       </Card>
 

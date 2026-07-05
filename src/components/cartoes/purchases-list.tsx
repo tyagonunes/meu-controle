@@ -22,6 +22,17 @@ import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  DesktopTableView,
+  ListToolbar,
+  MobileCard,
+  MobileCardActions,
+  MobileCardBody,
+  MobileCardHeader,
+  MobileCardList,
+  MobileCardRow,
+  MobileEmptyState,
+} from "@/components/ui/mobile-list";
+import {
   Table,
   TableBody,
   TableCell,
@@ -207,41 +218,42 @@ export const PurchasesList = ({
       <CardMembersInline creditCardId={creditCardId} members={members} />
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {purchases.length} compra(s) registrada(s)
-          </p>
-          <div className="flex gap-2">
-            <LinkButton
-              variant="outline"
-              size="sm"
-              href={`/relatorios/fatura/${creditCardId}`}
+        <ListToolbar
+          meta={
+            <p className="text-sm text-muted-foreground">
+              {purchases.length} compra(s) registrada(s)
+            </p>
+          }
+        >
+          <LinkButton
+            variant="outline"
+            size="sm"
+            href={`/relatorios/fatura/${creditCardId}`}
+          >
+            Ver fatura
+          </LinkButton>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger
+              render={<Button size="sm" disabled={members.length === 0} />}
             >
-              Ver fatura
-            </LinkButton>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger
-                render={<Button size="sm" disabled={members.length === 0} />}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Nova compra
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Registrar compra</DialogTitle>
-                </DialogHeader>
-                <PurchaseForm
-                  creditCardId={creditCardId}
-                  members={members}
-                  defaultMemberId={defaultMemberId}
-                  today={today}
-                  isPending={isPending}
-                  onSubmit={handleSubmit}
-                />
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova compra
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Registrar compra</DialogTitle>
+              </DialogHeader>
+              <PurchaseForm
+                creditCardId={creditCardId}
+                members={members}
+                defaultMemberId={defaultMemberId}
+                today={today}
+                isPending={isPending}
+                onSubmit={handleSubmit}
+              />
+            </DialogContent>
+          </Dialog>
+        </ListToolbar>
 
         {members.length <= 1 && (
           <p className="text-sm text-amber-600 dark:text-amber-400">
@@ -250,30 +262,105 @@ export const PurchasesList = ({
           </p>
         )}
 
-        <div className="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Quem comprou</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Parcelas</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {purchases.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center text-muted-foreground"
-                  >
-                    Nenhuma compra registrada
-                  </TableCell>
-                </TableRow>
-              ) : (
-                purchases.map((purchase) => (
+        {purchases.length === 0 ? (
+          <>
+            <MobileEmptyState>Nenhuma compra registrada</MobileEmptyState>
+            <DesktopTableView>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Quem comprou</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Parcelas</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="text-center text-muted-foreground"
+                    >
+                      Nenhuma compra registrada
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </DesktopTableView>
+          </>
+        ) : (
+          <>
+            <MobileCardList>
+              {purchases.map((purchase) => (
+                <MobileCard key={purchase.id}>
+                  <MobileCardHeader
+                    title={
+                      <div className="flex flex-wrap items-center gap-2">
+                        {purchase.description}
+                        {purchase.is_recurring && (
+                          <Badge variant="secondary" className="text-xs">
+                            Recorrente
+                          </Badge>
+                        )}
+                      </div>
+                    }
+                  />
+                  <MobileCardBody>
+                    <MobileCardRow label="Quem comprou">
+                      {purchase.card_members.name}
+                    </MobileCardRow>
+                    <MobileCardRow label="Data">
+                      {formatDate(purchase.purchase_date)}
+                    </MobileCardRow>
+                    <MobileCardRow label="Valor">
+                      {formatCurrency(Number(purchase.total_amount))}
+                      {purchase.is_recurring && (
+                        <span className="ml-1 text-xs font-normal text-muted-foreground">
+                          /mês
+                        </span>
+                      )}
+                    </MobileCardRow>
+                    <MobileCardRow label="Parcelas">
+                      {purchase.is_recurring
+                        ? "Mensal"
+                        : purchase.installments === 1
+                          ? "À vista"
+                          : `${purchase.installments}x`}
+                    </MobileCardRow>
+                  </MobileCardBody>
+                  <MobileCardActions>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() =>
+                        handleDelete(purchase.id, purchase.is_recurring)
+                      }
+                      disabled={isPending}
+                    >
+                      <Trash2 className="mr-1 h-3 w-3" />
+                      Excluir
+                    </Button>
+                  </MobileCardActions>
+                </MobileCard>
+              ))}
+            </MobileCardList>
+
+            <DesktopTableView>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Quem comprou</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Parcelas</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {purchases.map((purchase) => (
                   <TableRow key={purchase.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
@@ -325,11 +412,12 @@ export const PurchasesList = ({
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </DesktopTableView>
+          </>
+        )}
       </div>
     </div>
   );

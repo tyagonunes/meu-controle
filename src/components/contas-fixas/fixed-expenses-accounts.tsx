@@ -21,6 +21,17 @@ import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  DesktopTableView,
+  ListToolbar,
+  MobileCard,
+  MobileCardActions,
+  MobileCardBody,
+  MobileCardHeader,
+  MobileCardList,
+  MobileCardRow,
+  MobileEmptyState,
+} from "@/components/ui/mobile-list";
+import {
   Table,
   TableBody,
   TableCell,
@@ -89,10 +100,13 @@ export const FixedExpensesAccounts = ({ expenses }: FixedExpensesAccountsProps) 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Cadastre suas contas — o valor é lançado mês a mês
-        </p>
+      <ListToolbar
+        meta={
+          <p className="text-sm text-muted-foreground">
+            Cadastre suas contas — o valor é lançado mês a mês
+          </p>
+        }
+      >
         <Dialog
           open={open}
           onOpenChange={(value) => {
@@ -176,9 +190,49 @@ export const FixedExpensesAccounts = ({ expenses }: FixedExpensesAccountsProps) 
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </ListToolbar>
 
-      <div className="rounded-lg border">
+      {expenses.length === 0 ? (
+        <MobileEmptyState>Nenhuma conta cadastrada</MobileEmptyState>
+      ) : (
+        <MobileCardList>
+          {expenses.map((expense) => (
+            <MobileCard key={expense.id}>
+              <MobileCardHeader
+                title={expense.name}
+                badge={
+                  <Badge variant={expense.is_active ? "default" : "secondary"}>
+                    {expense.is_active ? "Ativa" : "Inativa"}
+                  </Badge>
+                }
+              />
+              <MobileCardBody>
+                <MobileCardRow label="Categoria">
+                  {categoryLabels[expense.category]}
+                </MobileCardRow>
+                <MobileCardRow label="Vencimento">
+                  Dia {expense.due_day}
+                </MobileCardRow>
+              </MobileCardBody>
+              <MobileCardActions>
+                <Button variant="outline" size="sm" onClick={() => openEdit(expense)}>
+                  Editar
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(expense.id)}
+                  disabled={isPending}
+                >
+                  Excluir
+                </Button>
+              </MobileCardActions>
+            </MobileCard>
+          ))}
+        </MobileCardList>
+      )}
+
+      <DesktopTableView>
         <Table>
           <TableHeader>
             <TableRow>
@@ -231,7 +285,7 @@ export const FixedExpensesAccounts = ({ expenses }: FixedExpensesAccountsProps) 
             )}
           </TableBody>
         </Table>
-      </div>
+      </DesktopTableView>
     </div>
   );
 };

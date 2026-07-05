@@ -18,6 +18,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  DesktopTableView,
+  MobileCard,
+  MobileCardActions,
+  MobileCardBody,
+  MobileCardHeader,
+  MobileCardList,
+  MobileCardRow,
+} from "@/components/ui/mobile-list";
+import {
   Table,
   TableBody,
   TableCell,
@@ -189,8 +198,77 @@ export const IncomeEntriesList = ({
           lançar receitas mensais.
         </div>
       ) : (
-        <div className="rounded-lg border">
-          <Table>
+        <>
+          <MobileCardList>
+            {items.map((item) => (
+              <MobileCard key={item.id}>
+                <MobileCardHeader
+                  title={item.name}
+                  badge={
+                    item.entry ? (
+                      <Badge variant="default">Lançado</Badge>
+                    ) : (
+                      <Badge variant="secondary">Pendente</Badge>
+                    )
+                  }
+                />
+                <MobileCardBody>
+                  <MobileCardRow label="Tipo">
+                    {incomeTypeLabels[item.type]}
+                  </MobileCardRow>
+                  <MobileCardRow label="Categoria">
+                    {incomeCategoryLabels[item.category]}
+                  </MobileCardRow>
+                  <MobileCardRow label="Valor do mês">
+                    <span className="text-emerald-600 dark:text-emerald-400">
+                      {item.entry
+                        ? formatCurrency(Number(item.entry.amount))
+                        : "—"}
+                    </span>
+                  </MobileCardRow>
+                  <MobileCardRow label="Recebimento">
+                    {item.entry
+                      ? `Dia ${item.entry.received_day}`
+                      : `Dia ${item.expected_day} (padrão)`}
+                  </MobileCardRow>
+                </MobileCardBody>
+                <MobileCardActions>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpen(item)}
+                    disabled={isPending}
+                  >
+                    {item.entry ? (
+                      <>
+                        <Pencil className="mr-1 h-3 w-3" />
+                        Editar
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-1 h-3 w-3" />
+                        Lançar
+                      </>
+                    )}
+                  </Button>
+                  {item.entry && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(item.entry!.id)}
+                      disabled={isPending}
+                      aria-label="Excluir lançamento"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </MobileCardActions>
+              </MobileCard>
+            ))}
+          </MobileCardList>
+
+          <DesktopTableView>
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Fonte</TableHead>
@@ -261,8 +339,9 @@ export const IncomeEntriesList = ({
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
-        </div>
+            </Table>
+          </DesktopTableView>
+        </>
       )}
 
       <Dialog

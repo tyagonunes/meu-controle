@@ -19,7 +19,7 @@ export const MonthPicker = ({ year, month, onChange }: MonthPickerProps) => {
       type="month"
       value={value}
       onChange={handleChange}
-      className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="flex h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:w-auto"
       aria-label="Selecionar mês"
     />
   );

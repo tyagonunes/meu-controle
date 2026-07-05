@@ -8,6 +8,7 @@ import { IncomeMigrationRequired } from "@/components/receitas/income-migration-
 import { IncomeSourcesAccounts } from "@/components/receitas/income-sources-accounts";
 import { MonthPickerNav } from "@/components/relatorios/month-picker-nav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsScrollArea } from "@/components/ui/mobile-list";
 import { formatMonthYear, getCurrentYearMonth } from "@/lib/format";
 
 type ReceitasPageProps = {
@@ -52,12 +53,14 @@ export default async function ReceitasPage({ searchParams }: ReceitasPageProps) 
       {!entriesTableReady && <IncomeMigrationRequired />}
 
       <Tabs defaultValue={defaultTab}>
-        <TabsList>
-          <TabsTrigger value="lancamentos">
-            Lançamentos — {formatMonthYear(billingMonth)}
-          </TabsTrigger>
-          <TabsTrigger value="cadastro">Cadastro de fontes</TabsTrigger>
-        </TabsList>
+        <TabsScrollArea>
+          <TabsList className="min-w-max">
+            <TabsTrigger value="lancamentos">
+              Lançamentos — {formatMonthYear(billingMonth)}
+            </TabsTrigger>
+            <TabsTrigger value="cadastro">Cadastro de fontes</TabsTrigger>
+          </TabsList>
+        </TabsScrollArea>
 
         <TabsContent value="lancamentos" className="mt-4">
           {entriesTableReady ? (

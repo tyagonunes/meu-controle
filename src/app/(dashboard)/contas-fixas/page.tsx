@@ -8,6 +8,7 @@ import { FixedExpensesAccounts } from "@/components/contas-fixas/fixed-expenses-
 import { MigrationRequired } from "@/components/contas-fixas/migration-required";
 import { MonthPickerNav } from "@/components/relatorios/month-picker-nav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsScrollArea } from "@/components/ui/mobile-list";
 import { formatMonthYear, getCurrentYearMonth } from "@/lib/format";
 
 type ContasFixasPageProps = {
@@ -51,12 +52,14 @@ export default async function ContasFixasPage({
       {!entriesTableReady && <MigrationRequired />}
 
       <Tabs defaultValue={defaultTab}>
-        <TabsList>
-          <TabsTrigger value="lancamentos">
-            Lançamentos — {formatMonthYear(billingMonth)}
-          </TabsTrigger>
-          <TabsTrigger value="cadastro">Cadastro de contas</TabsTrigger>
-        </TabsList>
+        <TabsScrollArea>
+          <TabsList className="min-w-max">
+            <TabsTrigger value="lancamentos">
+              Lançamentos — {formatMonthYear(billingMonth)}
+            </TabsTrigger>
+            <TabsTrigger value="cadastro">Cadastro de contas</TabsTrigger>
+          </TabsList>
+        </TabsScrollArea>
 
         <TabsContent value="lancamentos" className="mt-4">
           {entriesTableReady ? (

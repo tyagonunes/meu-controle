@@ -13,14 +13,17 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen">
       <Sidebar />
       <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center gap-4 border-b px-4 md:px-6">
+        <header className="flex h-16 items-center gap-3 border-b px-4 md:gap-4 md:px-6">
           <MobileNav />
-          <div className="flex flex-1">
-            <p className="text-sm text-muted-foreground">{user?.email}</p>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <p className="truncate text-sm font-medium md:hidden">Meu Controle</p>
+            <p className="truncate text-xs text-muted-foreground md:text-sm">
+              {user?.email}
+            </p>
           </div>
-          <ThemeToggle className="md:hidden" />
+          <ThemeToggle className="shrink-0 md:hidden" />
         </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 overflow-x-hidden p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

@@ -19,6 +19,17 @@ import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  DesktopTableView,
+  ListToolbar,
+  MobileCard,
+  MobileCardActions,
+  MobileCardBody,
+  MobileCardHeader,
+  MobileCardList,
+  MobileCardRow,
+  MobileEmptyState,
+} from "@/components/ui/mobile-list";
+import {
   Table,
   TableBody,
   TableCell,
@@ -69,10 +80,13 @@ export const CreditCardsList = ({ cards }: CreditCardsListProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {cards.length} cartão(ões) cadastrado(s)
-        </p>
+      <ListToolbar
+        meta={
+          <p className="text-sm text-muted-foreground">
+            {cards.length} cartão(ões) cadastrado(s)
+          </p>
+        }
+      >
         <Dialog
           open={open}
           onOpenChange={(value) => {
@@ -182,9 +196,68 @@ export const CreditCardsList = ({ cards }: CreditCardsListProps) => {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </ListToolbar>
 
-      <div className="rounded-lg border">
+      {cards.length === 0 ? (
+        <MobileEmptyState>Nenhum cartão cadastrado</MobileEmptyState>
+      ) : (
+        <MobileCardList>
+          {cards.map((card) => (
+            <MobileCard key={card.id}>
+              <MobileCardHeader
+                title={
+                  <>
+                    {card.name}
+                    {card.last_digits && (
+                      <span className="ml-1 text-sm font-normal text-muted-foreground">
+                        •••• {card.last_digits}
+                      </span>
+                    )}
+                  </>
+                }
+                badge={
+                  <Badge variant={card.is_active ? "default" : "secondary"}>
+                    {card.is_active ? "Ativo" : "Inativo"}
+                  </Badge>
+                }
+              />
+              <MobileCardBody>
+                <MobileCardRow label="Fechamento">
+                  Dia {card.closing_day}
+                </MobileCardRow>
+                <MobileCardRow label="Vencimento">
+                  Dia {card.due_day}
+                </MobileCardRow>
+              </MobileCardBody>
+              <MobileCardActions>
+                <LinkButton variant="outline" size="sm" href={`/cartoes/${card.id}`}>
+                  Abrir
+                </LinkButton>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditing(card);
+                    setOpen(true);
+                  }}
+                >
+                  Editar
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(card.id)}
+                  disabled={isPending}
+                >
+                  Excluir
+                </Button>
+              </MobileCardActions>
+            </MobileCard>
+          ))}
+        </MobileCardList>
+      )}
+
+      <DesktopTableView>
         <Table>
           <TableHeader>
             <TableRow>
@@ -255,7 +328,7 @@ export const CreditCardsList = ({ cards }: CreditCardsListProps) => {
             )}
           </TableBody>
         </Table>
-      </div>
+      </DesktopTableView>
     </div>
   );
 };

@@ -12,6 +12,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  DesktopTableView,
+  MobileCard,
+  MobileCardBody,
+  MobileCardHeader,
+  MobileCardList,
+  MobileCardRow,
+  MobileEmptyState,
+} from "@/components/ui/mobile-list";
+import {
   Table,
   TableBody,
   TableCell,
@@ -153,59 +162,105 @@ export default async function FaturaPage({
         </CardContent>
       </Card>
 
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Membro</TableHead>
-              <TableHead>Data compra</TableHead>
-              <TableHead>Parcela</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {installments.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  Nenhuma parcela nesta fatura
-                </TableCell>
-              </TableRow>
-            ) : (
-              installments.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    {item.purchases.description}
+      {installments.length === 0 ? (
+        <>
+          <MobileEmptyState>Nenhuma parcela nesta fatura</MobileEmptyState>
+          <DesktopTableView>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Membro</TableHead>
+                  <TableHead>Data compra</TableHead>
+                  <TableHead>Parcela</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    Nenhuma parcela nesta fatura
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {item.purchases.card_members.name}
-                      {item.purchases.card_members.is_owner && (
-                        <Badge variant="outline" className="text-xs">
-                          Titular
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </DesktopTableView>
+        </>
+      ) : (
+        <>
+          <MobileCardList>
+            {installments.map((item) => (
+              <MobileCard key={item.id}>
+                <MobileCardHeader title={item.purchases.description} />
+                <MobileCardBody>
+                  <MobileCardRow label="Membro">
+                    {item.purchases.card_members.name}
+                  </MobileCardRow>
+                  <MobileCardRow label="Data">
                     {formatDate(item.purchases.purchase_date)}
-                  </TableCell>
-                  <TableCell>
+                  </MobileCardRow>
+                  <MobileCardRow label="Parcela">
                     {item.purchases.is_recurring
                       ? `Mensal (${item.installment_number})`
                       : item.purchases.installments === 1
                         ? "À vista"
                         : `${item.installment_number}/${item.purchases.installments}`}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
+                  </MobileCardRow>
+                  <MobileCardRow label="Valor">
                     {formatCurrency(Number(item.amount))}
-                  </TableCell>
+                  </MobileCardRow>
+                </MobileCardBody>
+              </MobileCard>
+            ))}
+          </MobileCardList>
+
+          <DesktopTableView>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Membro</TableHead>
+                  <TableHead>Data compra</TableHead>
+                  <TableHead>Parcela</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {installments.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      {item.purchases.description}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {item.purchases.card_members.name}
+                        {item.purchases.card_members.is_owner && (
+                          <Badge variant="outline" className="text-xs">
+                            Titular
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {formatDate(item.purchases.purchase_date)}
+                    </TableCell>
+                    <TableCell>
+                      {item.purchases.is_recurring
+                        ? `Mensal (${item.installment_number})`
+                        : item.purchases.installments === 1
+                          ? "À vista"
+                          : `${item.installment_number}/${item.purchases.installments}`}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(Number(item.amount))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DesktopTableView>
+        </>
+      )}
     </div>
   );
 }

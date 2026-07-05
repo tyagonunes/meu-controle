@@ -18,6 +18,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  DesktopTableView,
+  ListToolbar,
+  MobileCard,
+  MobileCardActions,
+  MobileCardBody,
+  MobileCardHeader,
+  MobileCardList,
+  MobileCardRow,
+  MobileEmptyState,
+} from "@/components/ui/mobile-list";
+import {
   Table,
   TableBody,
   TableCell,
@@ -183,78 +194,143 @@ export const FixedExpenseEntriesList = ({
           lançar valores mensais.
         </div>
       ) : (
-        <div className="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Conta</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Valor do mês</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{categoryLabels[item.category]}</TableCell>
-                  <TableCell>
-                    {item.entry
-                      ? formatCurrency(Number(item.entry.amount))
-                      : "—"}
-                  </TableCell>
-                  <TableCell>
-                    {item.entry
-                      ? `Dia ${item.entry.due_day}`
-                      : `Dia ${item.due_day} (padrão)`}
-                  </TableCell>
-                  <TableCell>
-                    {item.entry ? (
+        <>
+          <MobileCardList>
+            {items.map((item) => (
+              <MobileCard key={item.id}>
+                <MobileCardHeader
+                  title={item.name}
+                  badge={
+                    item.entry ? (
                       <Badge variant="default">Lançado</Badge>
                     ) : (
                       <Badge variant="secondary">Pendente</Badge>
+                    )
+                  }
+                />
+                <MobileCardBody>
+                  <MobileCardRow label="Categoria">
+                    {categoryLabels[item.category]}
+                  </MobileCardRow>
+                  <MobileCardRow label="Valor do mês">
+                    {item.entry
+                      ? formatCurrency(Number(item.entry.amount))
+                      : "—"}
+                  </MobileCardRow>
+                  <MobileCardRow label="Vencimento">
+                    {item.entry
+                      ? `Dia ${item.entry.due_day}`
+                      : `Dia ${item.due_day} (padrão)`}
+                  </MobileCardRow>
+                </MobileCardBody>
+                <MobileCardActions>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpen(item)}
+                    disabled={isPending}
+                  >
+                    {item.entry ? (
+                      <>
+                        <Pencil className="mr-1 h-3 w-3" />
+                        Editar
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-1 h-3 w-3" />
+                        Lançar
+                      </>
                     )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpen(item)}
-                        disabled={isPending}
-                      >
-                        {item.entry ? (
-                          <>
-                            <Pencil className="mr-1 h-3 w-3" />
-                            Editar
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="mr-1 h-3 w-3" />
-                            Lançar
-                          </>
-                        )}
-                      </Button>
-                      {item.entry && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(item.entry!.id)}
-                          disabled={isPending}
-                          aria-label="Excluir lançamento"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
+                  </Button>
+                  {item.entry && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(item.entry!.id)}
+                      disabled={isPending}
+                      aria-label="Excluir lançamento"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </MobileCardActions>
+              </MobileCard>
+            ))}
+          </MobileCardList>
+
+          <DesktopTableView>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Conta</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Valor do mês</TableHead>
+                  <TableHead>Vencimento</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>{categoryLabels[item.category]}</TableCell>
+                    <TableCell>
+                      {item.entry
+                        ? formatCurrency(Number(item.entry.amount))
+                        : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {item.entry
+                        ? `Dia ${item.entry.due_day}`
+                        : `Dia ${item.due_day} (padrão)`}
+                    </TableCell>
+                    <TableCell>
+                      {item.entry ? (
+                        <Badge variant="default">Lançado</Badge>
+                      ) : (
+                        <Badge variant="secondary">Pendente</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpen(item)}
+                          disabled={isPending}
+                        >
+                          {item.entry ? (
+                            <>
+                              <Pencil className="mr-1 h-3 w-3" />
+                              Editar
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="mr-1 h-3 w-3" />
+                              Lançar
+                            </>
+                          )}
+                        </Button>
+                        {item.entry && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(item.entry!.id)}
+                            disabled={isPending}
+                            aria-label="Excluir lançamento"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DesktopTableView>
+        </>
       )}
 
       <Dialog

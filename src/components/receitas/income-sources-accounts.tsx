@@ -21,6 +21,17 @@ import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  DesktopTableView,
+  ListToolbar,
+  MobileCard,
+  MobileCardActions,
+  MobileCardBody,
+  MobileCardHeader,
+  MobileCardList,
+  MobileCardRow,
+  MobileEmptyState,
+} from "@/components/ui/mobile-list";
+import {
   Table,
   TableBody,
   TableCell,
@@ -94,10 +105,13 @@ export const IncomeSourcesAccounts = ({ sources }: IncomeSourcesAccountsProps) =
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Cadastre salário e outras fontes — o valor é lançado mês a mês
-        </p>
+      <ListToolbar
+        meta={
+          <p className="text-sm text-muted-foreground">
+            Cadastre salário e outras fontes — o valor é lançado mês a mês
+          </p>
+        }
+      >
         <Dialog
           open={open}
           onOpenChange={(value) => {
@@ -193,9 +207,52 @@ export const IncomeSourcesAccounts = ({ sources }: IncomeSourcesAccountsProps) =
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </ListToolbar>
 
-      <div className="rounded-lg border">
+      {sources.length === 0 ? (
+        <MobileEmptyState>Nenhuma fonte cadastrada</MobileEmptyState>
+      ) : (
+        <MobileCardList>
+          {sources.map((source) => (
+            <MobileCard key={source.id}>
+              <MobileCardHeader
+                title={source.name}
+                badge={
+                  <Badge variant={source.is_active ? "default" : "secondary"}>
+                    {source.is_active ? "Ativa" : "Inativa"}
+                  </Badge>
+                }
+              />
+              <MobileCardBody>
+                <MobileCardRow label="Tipo">
+                  {incomeTypeLabels[source.type]}
+                </MobileCardRow>
+                <MobileCardRow label="Categoria">
+                  {incomeCategoryLabels[source.category]}
+                </MobileCardRow>
+                <MobileCardRow label="Recebimento">
+                  Dia {source.expected_day}
+                </MobileCardRow>
+              </MobileCardBody>
+              <MobileCardActions>
+                <Button variant="outline" size="sm" onClick={() => openEdit(source)}>
+                  Editar
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(source.id)}
+                  disabled={isPending}
+                >
+                  Excluir
+                </Button>
+              </MobileCardActions>
+            </MobileCard>
+          ))}
+        </MobileCardList>
+      )}
+
+      <DesktopTableView>
         <Table>
           <TableHeader>
             <TableRow>
@@ -250,7 +307,7 @@ export const IncomeSourcesAccounts = ({ sources }: IncomeSourcesAccountsProps) =
             )}
           </TableBody>
         </Table>
-      </div>
+      </DesktopTableView>
     </div>
   );
 };
