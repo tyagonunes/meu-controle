@@ -191,9 +191,11 @@ export default async function FaturaPage({
                     {formatDate(item.purchases.purchase_date)}
                   </TableCell>
                   <TableCell>
-                    {item.purchases.installments === 1
-                      ? "À vista"
-                      : `${item.installment_number}/${item.purchases.installments}`}
+                    {item.purchases.is_recurring
+                      ? `Mensal (${item.installment_number})`
+                      : item.purchases.installments === 1
+                        ? "À vista"
+                        : `${item.installment_number}/${item.purchases.installments}`}
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(Number(item.amount))}

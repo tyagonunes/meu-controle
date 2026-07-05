@@ -1,16 +1,22 @@
 "use server";
 
 import { getFixedExpenseEntriesByMonth } from "@/actions/fixed-expense-entries";
+import { getIncomeEntriesByMonth } from "@/actions/income-entries";
 import { getCreditCards } from "@/actions/credit-cards";
 import { getAllInstallmentsByMonth } from "@/actions/purchases";
-import { categoryLabels, toBillingMonthString } from "@/lib/format";
-import type { FixedExpenseCategory } from "@/types/database";
+import {
+  categoryLabels,
+  incomeCategoryLabels,
+  toBillingMonthString,
+} from "@/lib/format";
+import type { FixedExpenseCategory, IncomeCategory } from "@/types/database";
 
 export const getMonthlyReport = async (year: number, month: number) => {
   const billingMonth = toBillingMonthString(year, month);
 
-  const [fixedEntries, cards, installments] = await Promise.all([
+  const [fixedEntries, incomeEntries, cards, installments] = await Promise.all([
     getFixedExpenseEntriesByMonth(year, month),
+    getIncomeEntriesByMonth(year, month),
     getCreditCards(),
     getAllInstallmentsByMonth(billingMonth),
   ]);
@@ -27,6 +33,22 @@ export const getMonthlyReport = async (year: number, month: number) => {
     categoryLabel: categoryLabels[entry.fixed_expenses.category as FixedExpenseCategory],
     amount: Number(entry.amount),
     dueDay: entry.due_day,
+  }));
+
+  const incomeTotal = incomeEntries.reduce(
+    (sum, item) => sum + Number(item.amount),
+    0
+  );
+
+  const incomeBreakdown = incomeEntries.map((entry) => ({
+    id: entry.id,
+    name: entry.income_sources.name,
+    type: entry.income_sources.type,
+    category: entry.income_sources.category as IncomeCategory,
+    categoryLabel:
+      incomeCategoryLabels[entry.income_sources.category as IncomeCategory],
+    amount: Number(entry.amount),
+    receivedDay: entry.received_day,
   }));
 
   const cardTotals = cards.map((card) => {
@@ -56,7 +78,11 @@ export const getMonthlyReport = async (year: number, month: number) => {
     (sum, c) => sum + c.othersTotal,
     0
   );
-  const grandTotal = fixedTotal + cardsTotal;
+  const ownerCardsTotal = cardsTotal - othersOnMyCards;
+  const expensesTotal = fixedTotal + cardsTotal;
+  const myExpensesTotal = fixedTotal + ownerCardsTotal;
+  const grandTotal = expensesTotal;
+  const remainingBalance = incomeTotal - myExpensesTotal;
 
   const memberBreakdown = installments.reduce<
     Record<string, { name: string; isOwner: boolean; total: number }>
@@ -74,12 +100,18 @@ export const getMonthlyReport = async (year: number, month: number) => {
 
   return {
     billingMonth,
+    incomeTotal,
+    incomeBreakdown,
     fixedTotal,
     fixedExpenseBreakdown,
     cardTotals,
     cardsTotal,
+    ownerCardsTotal,
     othersOnMyCards,
+    expensesTotal,
+    myExpensesTotal,
     grandTotal,
+    remainingBalance,
     memberBreakdown: Object.values(memberBreakdown).sort(
       (a, b) => b.total - a.total
     ),

@@ -1,4 +1,5 @@
 import { getMonthlyReport } from "@/actions/reports";
+import { MonthlySpendingSummary } from "@/components/dashboard/monthly-spending-summary";
 import { MonthPickerNav } from "@/components/relatorios/month-picker-nav";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
@@ -17,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import {
   formatCurrency,
   formatMonthYear,
@@ -36,6 +38,7 @@ export default async function RelatorioMensalPage({
   const month = query.mes ? Number(query.mes) : current.month;
 
   const report = await getMonthlyReport(year, month);
+  const balancePositive = report.remainingBalance >= 0;
 
   return (
     <div className="space-y-6">
@@ -55,40 +58,94 @@ export default async function RelatorioMensalPage({
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total geral</CardDescription>
-            <CardTitle className="text-2xl">
-              {formatCurrency(report.grandTotal)}
+            <CardDescription>Receitas</CardDescription>
+            <CardTitle className="text-2xl text-emerald-600 dark:text-emerald-400">
+              {formatCurrency(report.incomeTotal)}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Contas fixas</CardDescription>
+            <CardDescription>Minhas despesas</CardDescription>
             <CardTitle className="text-2xl">
-              {formatCurrency(report.fixedTotal)}
+              {formatCurrency(report.myExpensesTotal)}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Cartões</CardDescription>
-            <CardTitle className="text-2xl">
-              {formatCurrency(report.cardsTotal)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Terceiros nos meus cartões</CardDescription>
-            <CardTitle className="text-2xl text-amber-600 dark:text-amber-400">
-              {formatCurrency(report.othersOnMyCards)}
+            <CardDescription>Saldo restante</CardDescription>
+            <CardTitle
+              className={cn(
+                "text-2xl",
+                balancePositive
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-destructive"
+              )}
+            >
+              {formatCurrency(report.remainingBalance)}
             </CardTitle>
           </CardHeader>
         </Card>
       </div>
+
+      <MonthlySpendingSummary
+        expensesTotal={report.expensesTotal}
+        myExpensesTotal={report.myExpensesTotal}
+        othersOnMyCards={report.othersOnMyCards}
+        fixedTotal={report.fixedTotal}
+        ownerCardsTotal={report.ownerCardsTotal}
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Receitas do mês</CardTitle>
+          <CardDescription>Salário e outras fontes de renda</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fonte</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {report.incomeBreakdown.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    Nenhuma receita lançada neste mês
+                  </TableCell>
+                </TableRow>
+              ) : (
+                report.incomeBreakdown.map((income) => (
+                  <TableRow key={income.id}>
+                    <TableCell className="font-medium">{income.name}</TableCell>
+                    <TableCell>{income.categoryLabel}</TableCell>
+                    <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(income.amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <LinkButton
+                        variant="outline"
+                        size="sm"
+                        href={`/receitas?ano=${year}&mes=${month}`}
+                      >
+                        Ver
+                      </LinkButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -31,12 +31,131 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { LinkButton } from "@/components/ui/link-button";
+import { cn } from "@/lib/utils";
 import type { CardMember, PurchaseWithMember } from "@/types/database";
 
 type PurchasesListProps = {
   creditCardId: string;
   purchases: PurchaseWithMember[];
   members: CardMember[];
+};
+
+type PurchaseFormProps = {
+  creditCardId: string;
+  members: CardMember[];
+  defaultMemberId: string;
+  today: string;
+  isPending: boolean;
+  onSubmit: (formData: FormData) => void;
+};
+
+const PurchaseForm = ({
+  creditCardId,
+  members,
+  defaultMemberId,
+  today,
+  isPending,
+  onSubmit,
+}: PurchaseFormProps) => {
+  const [isRecurring, setIsRecurring] = useState(false);
+
+  return (
+    <form
+      key={`purchase-${creditCardId}-${members.length}-${isRecurring}`}
+      action={onSubmit}
+      className="space-y-4"
+    >
+      <div className="space-y-2">
+        <Label htmlFor="description">Descrição</Label>
+        <Input
+          id="description"
+          name="description"
+          required
+          placeholder="Ex: Netflix, Spotify, Academia"
+        />
+      </div>
+      <label
+        className={cn(
+          "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
+          isRecurring && "border-primary bg-primary/5"
+        )}
+      >
+        <input
+          type="checkbox"
+          name="is_recurring"
+          value="true"
+          checked={isRecurring}
+          onChange={(event) => setIsRecurring(event.target.checked)}
+          className="mt-1 h-4 w-4 rounded border-input"
+        />
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Compra recorrente (mensal)</p>
+          <p className="text-xs text-muted-foreground">
+            Aparece na fatura todos os meses a partir da data de início
+          </p>
+        </div>
+      </label>
+      <div className={cn("grid gap-4", isRecurring ? "grid-cols-1" : "grid-cols-2")}>
+        <div className="space-y-2">
+          <Label htmlFor="total_amount">
+            {isRecurring ? "Valor mensal (R$)" : "Valor total (R$)"}
+          </Label>
+          <Input
+            id="total_amount"
+            name="total_amount"
+            type="number"
+            step="0.01"
+            min="0.01"
+            required
+          />
+        </div>
+        {!isRecurring && (
+          <div className="space-y-2">
+            <Label htmlFor="installments">Parcelas</Label>
+            <Input
+              id="installments"
+              name="installments"
+              type="number"
+              min="1"
+              defaultValue={1}
+              required
+            />
+          </div>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="purchase_date">
+          {isRecurring ? "Início da recorrência" : "Data da compra"}
+        </Label>
+        <Input
+          id="purchase_date"
+          name="purchase_date"
+          type="date"
+          defaultValue={today}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="card_member_id">Quem comprou</Label>
+          <AddMemberQuickDialog creditCardId={creditCardId} />
+        </div>
+        <FormSelect
+          name="card_member_id"
+          defaultValue={defaultMemberId}
+          placeholder="Selecione quem comprou"
+          options={members.map((member) => ({
+            value: member.id,
+            label: member.name + (member.is_owner ? " (Titular)" : ""),
+          }))}
+          required
+        />
+      </div>
+      <Button type="submit" className="w-full" disabled={isPending}>
+        {isPending ? "Salvando..." : isRecurring ? "Salvar recorrente" : "Salvar compra"}
+      </Button>
+    </form>
+  );
 };
 
 export const PurchasesList = ({
@@ -65,8 +184,12 @@ export const PurchasesList = ({
     });
   };
 
-  const handleDelete = (id: string) => {
-    if (!confirm("Deseja excluir esta compra?")) return;
+  const handleDelete = (id: string, isRecurring: boolean) => {
+    const message = isRecurring
+      ? "Deseja excluir esta compra recorrente? Ela deixará de aparecer nas faturas futuras."
+      : "Deseja excluir esta compra?";
+
+    if (!confirm(message)) return;
 
     startTransition(async () => {
       const result = await deletePurchase(id, creditCardId);
@@ -107,69 +230,14 @@ export const PurchasesList = ({
                 <DialogHeader>
                   <DialogTitle>Registrar compra</DialogTitle>
                 </DialogHeader>
-                <form
-                  key={`purchase-${creditCardId}-${open}-${members.length}`}
-                  action={handleSubmit}
-                  className="space-y-4"
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descrição</Label>
-                    <Input id="description" name="description" required />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="total_amount">Valor total (R$)</Label>
-                      <Input
-                        id="total_amount"
-                        name="total_amount"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="installments">Parcelas</Label>
-                      <Input
-                        id="installments"
-                        name="installments"
-                        type="number"
-                        min="1"
-                        defaultValue={1}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="purchase_date">Data da compra</Label>
-                    <Input
-                      id="purchase_date"
-                      name="purchase_date"
-                      type="date"
-                      defaultValue={today}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="card_member_id">Quem comprou</Label>
-                      <AddMemberQuickDialog creditCardId={creditCardId} />
-                    </div>
-                    <FormSelect
-                      name="card_member_id"
-                      defaultValue={defaultMemberId}
-                      placeholder="Selecione quem comprou"
-                      options={members.map((member) => ({
-                        value: member.id,
-                        label: member.name + (member.is_owner ? " (Titular)" : ""),
-                      }))}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isPending}>
-                    {isPending ? "Salvando..." : "Salvar compra"}
-                  </Button>
-                </form>
+                <PurchaseForm
+                  creditCardId={creditCardId}
+                  members={members}
+                  defaultMemberId={defaultMemberId}
+                  today={today}
+                  isPending={isPending}
+                  onSubmit={handleSubmit}
+                />
               </DialogContent>
             </Dialog>
           </div>
@@ -208,7 +276,14 @@ export const PurchasesList = ({
                 purchases.map((purchase) => (
                   <TableRow key={purchase.id}>
                     <TableCell className="font-medium">
-                      {purchase.description}
+                      <div className="flex items-center gap-2">
+                        {purchase.description}
+                        {purchase.is_recurring && (
+                          <Badge variant="secondary" className="text-xs">
+                            Recorrente
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -223,17 +298,26 @@ export const PurchasesList = ({
                     <TableCell>{formatDate(purchase.purchase_date)}</TableCell>
                     <TableCell>
                       {formatCurrency(Number(purchase.total_amount))}
+                      {purchase.is_recurring && (
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          /mês
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>
-                      {purchase.installments === 1
-                        ? "À vista"
-                        : `${purchase.installments}x`}
+                      {purchase.is_recurring
+                        ? "Mensal"
+                        : purchase.installments === 1
+                          ? "À vista"
+                          : `${purchase.installments}x`}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(purchase.id)}
+                        onClick={() =>
+                          handleDelete(purchase.id, purchase.is_recurring)
+                        }
                         disabled={isPending}
                         aria-label="Excluir compra"
                       >

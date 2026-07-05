@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Banknote,
   CreditCard,
   Home,
   LayoutDashboard,
@@ -25,6 +26,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/receitas", label: "Receitas", icon: Banknote },
   { href: "/contas-fixas", label: "Contas Fixas", icon: Wallet },
   { href: "/cartoes", label: "Cartões", icon: CreditCard },
   { href: "/relatorios/mensal", label: "Relatório Mensal", icon: Receipt },

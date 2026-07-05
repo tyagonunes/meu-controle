@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import type { FixedExpenseCategory } from "@/types/database";
+import type { FixedExpenseCategory, IncomeCategory, IncomeSourceType } from "@/types/database";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -28,6 +28,18 @@ export const categoryLabels: Record<FixedExpenseCategory, string> = {
   moradia: "Moradia",
   utilidades: "Utilidades",
   financiamento: "Financiamento",
+  outros: "Outros",
+};
+
+export const incomeTypeLabels: Record<IncomeSourceType, string> = {
+  fixed: "Fixa mensal",
+  variable: "Variável",
+};
+
+export const incomeCategoryLabels: Record<IncomeCategory, string> = {
+  salario: "Salário",
+  freelance: "Freelance",
+  investimentos: "Investimentos",
   outros: "Outros",
 };
 

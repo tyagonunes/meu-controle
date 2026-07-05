@@ -1,4 +1,4 @@
-import { addMonths, setDate, startOfMonth } from "date-fns";
+import { addMonths, differenceInCalendarMonths, parseISO, setDate, startOfMonth } from "date-fns";
 
 export type InstallmentDraft = {
   installment_number: number;
@@ -69,4 +69,27 @@ export const generateInstallments = (
 export const parsePurchaseDate = (dateString: string): Date => {
   const [year, month, day] = dateString.split("-").map(Number);
   return setDate(new Date(year, month - 1, 1), day);
+};
+
+export const parseBillingMonth = (billingMonth: string): Date =>
+  startOfMonth(parseISO(billingMonth));
+
+export const isRecurringActiveInMonth = (
+  purchaseDate: Date,
+  closingDay: number,
+  billingMonth: string
+): boolean => {
+  const targetMonth = parseBillingMonth(billingMonth);
+  const firstBilling = getFirstBillingMonth(purchaseDate, closingDay);
+  return targetMonth >= firstBilling;
+};
+
+export const getRecurringInstallmentNumber = (
+  purchaseDate: Date,
+  closingDay: number,
+  billingMonth: string
+): number => {
+  const targetMonth = parseBillingMonth(billingMonth);
+  const firstBilling = getFirstBillingMonth(purchaseDate, closingDay);
+  return differenceInCalendarMonths(targetMonth, firstBilling) + 1;
 };
