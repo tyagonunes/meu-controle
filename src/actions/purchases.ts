@@ -272,9 +272,13 @@ export const getInstallmentsByMonth = async (
       buildRecurringInstallment(purchase, billingMonth, card.closing_day)
     );
 
-  return [...dbInstallments, ...recurringInstallments].sort(
-    (a, b) => Number(b.amount) - Number(a.amount)
-  );
+  return [...dbInstallments, ...recurringInstallments].sort((a, b) => {
+    const dateDiff = b.purchases.purchase_date.localeCompare(
+      a.purchases.purchase_date
+    );
+    if (dateDiff !== 0) return dateDiff;
+    return a.purchases.description.localeCompare(b.purchases.description);
+  });
 };
 
 export const getAllInstallmentsByMonth = async (
