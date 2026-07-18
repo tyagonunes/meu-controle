@@ -2,9 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { createPurchase, deletePurchase } from "@/actions/purchases";
+import {
+  createPurchase,
+  deletePurchase,
+  updatePurchase,
+} from "@/actions/purchases";
 import {
   AddMemberQuickDialog,
   CardMembersInline,
@@ -57,6 +61,7 @@ type PurchaseFormProps = {
   defaultMemberId: string;
   today: string;
   isPending: boolean;
+  purchase?: PurchaseWithMember | null;
   onSubmit: (formData: FormData) => void;
 };
 
@@ -66,13 +71,14 @@ const PurchaseForm = ({
   defaultMemberId,
   today,
   isPending,
+  purchase,
   onSubmit,
 }: PurchaseFormProps) => {
-  const [isRecurring, setIsRecurring] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(purchase?.is_recurring ?? false);
 
   return (
     <form
-      key={`purchase-${creditCardId}-${members.length}-${isRecurring}`}
+      key={`purchase-${purchase?.id ?? "new"}-${members.length}-${isRecurring}`}
       action={onSubmit}
       className="space-y-4"
     >
@@ -82,6 +88,7 @@ const PurchaseForm = ({
           id="description"
           name="description"
           required
+          defaultValue={purchase?.description}
           placeholder="Ex: Netflix, Spotify, Academia"
         />
       </div>
@@ -118,6 +125,7 @@ const PurchaseForm = ({
             step="0.01"
             min="0.01"
             required
+            defaultValue={purchase?.total_amount ?? ""}
           />
         </div>
         {!isRecurring && (
@@ -128,7 +136,7 @@ const PurchaseForm = ({
               name="installments"
               type="number"
               min="1"
-              defaultValue={1}
+              defaultValue={purchase?.installments ?? 1}
               required
             />
           </div>
@@ -142,7 +150,7 @@ const PurchaseForm = ({
           id="purchase_date"
           name="purchase_date"
           type="date"
-          defaultValue={today}
+          defaultValue={purchase?.purchase_date ?? today}
           required
         />
       </div>
@@ -153,7 +161,7 @@ const PurchaseForm = ({
         </div>
         <FormSelect
           name="card_member_id"
-          defaultValue={defaultMemberId}
+          defaultValue={purchase?.card_member_id ?? defaultMemberId}
           placeholder="Selecione quem comprou"
           options={members.map((member) => ({
             value: member.id,
@@ -163,7 +171,13 @@ const PurchaseForm = ({
         />
       </div>
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Salvando..." : isRecurring ? "Salvar recorrente" : "Salvar compra"}
+        {isPending
+          ? "Salvando..."
+          : purchase
+            ? "Salvar alterações"
+            : isRecurring
+              ? "Salvar recorrente"
+              : "Salvar compra"}
       </Button>
     </form>
   );
@@ -176,21 +190,37 @@ export const PurchasesList = ({
 }: PurchasesListProps) => {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<PurchaseWithMember | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const today = new Date().toISOString().split("T")[0];
   const defaultMemberId =
     members.find((m) => m.is_owner)?.id ?? members[0]?.id ?? "";
 
+  const handleOpenChange = (value: boolean) => {
+    setOpen(value);
+    if (!value) setEditing(null);
+  };
+
+  const handleEdit = (purchase: PurchaseWithMember) => {
+    setEditing(purchase);
+    setOpen(true);
+  };
+
   const handleSubmit = (formData: FormData) => {
     startTransition(async () => {
-      const result = await createPurchase(creditCardId, formData);
+      const result = editing
+        ? await updatePurchase(editing.id, creditCardId, formData)
+        : await createPurchase(creditCardId, formData);
+
       if (result?.error) {
         toast.error(result.error);
         return;
       }
-      toast.success("Compra registrada");
+
+      toast.success(editing ? "Compra atualizada" : "Compra registrada");
       setOpen(false);
+      setEditing(null);
       router.refresh();
     });
   };
@@ -232,23 +262,33 @@ export const PurchasesList = ({
           >
             Ver fatura
           </LinkButton>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger
-              render={<Button size="sm" disabled={members.length === 0} />}
+              render={
+                <Button
+                  size="sm"
+                  disabled={members.length === 0}
+                  onClick={() => setEditing(null)}
+                />
+              }
             >
               <Plus className="mr-2 h-4 w-4" />
               Nova compra
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Registrar compra</DialogTitle>
+                <DialogTitle>
+                  {editing ? "Editar compra" : "Registrar compra"}
+                </DialogTitle>
               </DialogHeader>
               <PurchaseForm
+                key={editing?.id ?? "new"}
                 creditCardId={creditCardId}
                 members={members}
                 defaultMemberId={defaultMemberId}
                 today={today}
                 isPending={isPending}
+                purchase={editing}
                 onSubmit={handleSubmit}
               />
             </DialogContent>
@@ -332,6 +372,15 @@ export const PurchasesList = ({
                   </MobileCardBody>
                   <MobileCardActions>
                     <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(purchase)}
+                      disabled={isPending}
+                    >
+                      <Pencil className="mr-1 h-3 w-3" />
+                      Editar
+                    </Button>
+                    <Button
                       variant="destructive"
                       size="sm"
                       onClick={() =>
@@ -361,57 +410,68 @@ export const PurchasesList = ({
                 </TableHeader>
                 <TableBody>
                   {purchases.map((purchase) => (
-                  <TableRow key={purchase.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {purchase.description}
+                    <TableRow key={purchase.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {purchase.description}
+                          {purchase.is_recurring && (
+                            <Badge variant="secondary" className="text-xs">
+                              Recorrente
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {purchase.card_members.name}
+                          {purchase.card_members.is_owner && (
+                            <Badge variant="outline" className="text-xs">
+                              Titular
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatDate(purchase.purchase_date)}</TableCell>
+                      <TableCell>
+                        {formatCurrency(Number(purchase.total_amount))}
                         {purchase.is_recurring && (
-                          <Badge variant="secondary" className="text-xs">
-                            Recorrente
-                          </Badge>
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            /mês
+                          </span>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {purchase.card_members.name}
-                        {purchase.card_members.is_owner && (
-                          <Badge variant="outline" className="text-xs">
-                            Titular
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{formatDate(purchase.purchase_date)}</TableCell>
-                    <TableCell>
-                      {formatCurrency(Number(purchase.total_amount))}
-                      {purchase.is_recurring && (
-                        <span className="ml-1 text-xs text-muted-foreground">
-                          /mês
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {purchase.is_recurring
-                        ? "Mensal"
-                        : purchase.installments === 1
-                          ? "À vista"
-                          : `${purchase.installments}x`}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          handleDelete(purchase.id, purchase.is_recurring)
-                        }
-                        disabled={isPending}
-                        aria-label="Excluir compra"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                      <TableCell>
+                        {purchase.is_recurring
+                          ? "Mensal"
+                          : purchase.installments === 1
+                            ? "À vista"
+                            : `${purchase.installments}x`}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(purchase)}
+                            disabled={isPending}
+                            aria-label="Editar compra"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              handleDelete(purchase.id, purchase.is_recurring)
+                            }
+                            disabled={isPending}
+                            aria-label="Excluir compra"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>

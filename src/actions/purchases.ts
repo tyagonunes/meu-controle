@@ -135,6 +135,81 @@ export const createPurchase = async (
   return { success: true };
 };
 
+export const updatePurchase = async (
+  id: string,
+  creditCardId: string,
+  formData: FormData
+) => {
+  const supabase = await createClient();
+
+  const { data: card, error: cardError } = await supabase
+    .from("credit_cards")
+    .select("closing_day")
+    .eq("id", creditCardId)
+    .single();
+
+  if (cardError) return { error: cardError.message };
+
+  const isRecurring = formData.get("is_recurring") === "true";
+  const totalAmount = Number(formData.get("total_amount"));
+  const installments = isRecurring
+    ? 1
+    : Number(formData.get("installments")) || 1;
+  const purchaseDateStr = formData.get("purchase_date") as string;
+  const purchaseDate = parsePurchaseDate(purchaseDateStr);
+
+  const { error: purchaseError } = await supabase
+    .from("purchases")
+    .update({
+      card_member_id: formData.get("card_member_id") as string,
+      description: formData.get("description") as string,
+      total_amount: totalAmount,
+      purchase_date: purchaseDateStr,
+      installments,
+      is_recurring: isRecurring,
+    })
+    .eq("id", id)
+    .eq("credit_card_id", creditCardId);
+
+  if (purchaseError) return { error: purchaseError.message };
+
+  const { error: deleteInstallmentsError } = await supabase
+    .from("purchase_installments")
+    .delete()
+    .eq("purchase_id", id);
+
+  if (deleteInstallmentsError) return { error: deleteInstallmentsError.message };
+
+  if (!isRecurring) {
+    const installmentDrafts = generateInstallments(
+      totalAmount,
+      installments,
+      purchaseDate,
+      card.closing_day
+    );
+
+    const { error: installmentsError } = await supabase
+      .from("purchase_installments")
+      .insert(
+        installmentDrafts.map((draft) => ({
+          purchase_id: id,
+          credit_card_id: creditCardId,
+          installment_number: draft.installment_number,
+          amount: draft.amount,
+          billing_month: draft.billing_month,
+        }))
+      );
+
+    if (installmentsError) return { error: installmentsError.message };
+  }
+
+  revalidatePath(`/cartoes/${creditCardId}`);
+  revalidatePath("/");
+  revalidatePath("/relatorios/mensal");
+  revalidatePath(`/relatorios/fatura/${creditCardId}`);
+  return { success: true };
+};
+
 export const deletePurchase = async (id: string, creditCardId: string) => {
   const supabase = await createClient();
   const { error } = await supabase.from("purchases").delete().eq("id", id);

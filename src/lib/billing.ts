@@ -11,13 +11,12 @@ export const getFirstBillingMonth = (
   closingDay: number
 ): Date => {
   const day = purchaseDate.getDate();
-  const baseMonth = startOfMonth(purchaseDate);
+  const closingMonth =
+    day <= closingDay
+      ? startOfMonth(purchaseDate)
+      : startOfMonth(addMonths(purchaseDate, 1));
 
-  if (day <= closingDay) {
-    return baseMonth;
-  }
-
-  return startOfMonth(addMonths(purchaseDate, 1));
+  return startOfMonth(addMonths(closingMonth, 1));
 };
 
 export const getBillingMonthForInstallment = (
